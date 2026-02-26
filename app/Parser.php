@@ -12,7 +12,6 @@ use function count;
 use function fclose;
 use function fgets;
 use function file_get_contents;
-use function file_put_contents;
 use function filesize;
 use function fopen;
 use function fread;
@@ -44,7 +43,7 @@ final class Parser
         gc_disable();
 
         $fileSize = filesize($inputPath);
-        $workers = 10;
+        $workers = 12;
 
         // ─── Build date lookup (arithmetic, no mktime/date overhead) ───
 
@@ -149,7 +148,21 @@ final class Parser
                     $inputPath, $bounds[$w], $bounds[$w + 1],
                     $slugIndex, $dateChars, $numSlugs, $numDates,
                 );
-                file_put_contents($tmpFile, pack('V*', ...$result));
+                $wfh = fopen($tmpFile, 'wb');
+                $batch = [];
+                $bc = 0;
+                foreach ($result as $v) {
+                    $batch[] = $v;
+                    if (++$bc === 8192) {
+                        fwrite($wfh, pack('V*', ...$batch));
+                        $batch = [];
+                        $bc = 0;
+                    }
+                }
+                if ($batch) {
+                    fwrite($wfh, pack('V*', ...$batch));
+                }
+                fclose($wfh);
                 exit(0);
             }
 
@@ -181,7 +194,6 @@ final class Parser
                 $pending--;
             }
         }
-
         // ─── Emit JSON ───
 
         $out = fopen($outputPath, 'wb');
