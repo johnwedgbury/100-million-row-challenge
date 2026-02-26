@@ -20,13 +20,10 @@ use function fseek;
 use function ftell;
 use function fwrite;
 use function gc_disable;
-use function getenv;
 use function getmypid;
-use function implode;
 use function pack;
 use function pcntl_fork;
 use function pcntl_wait;
-use function pcntl_waitpid;
 use function str_replace;
 use function stream_set_read_buffer;
 use function stream_set_write_buffer;
@@ -206,24 +203,24 @@ final class Parser
 
         for ($s = 0; $s < $numSlugs; $s++) {
             $base = $s * $numDates;
-            $entries = [];
+            $buf = '';
+            $sep = '';
 
             for ($d = 0; $d < $numDates; $d++) {
                 $n = $tally[$base + $d];
                 if ($n === 0) {
                     continue;
                 }
-                $entries[] = $datePrefixes[$d] . $n;
+                $buf .= $sep . $datePrefixes[$d] . $n;
+                $sep = ",\n";
             }
 
-            if ($entries === []) {
+            if ($buf === '') {
                 continue;
             }
 
-            $buf = $firstSlug ? "\n    " : ",\n    ";
+            fwrite($out, ($firstSlug ? '' : ',') . "\n    " . $escapedPaths[$s] . ": {\n" . $buf . "\n    }");
             $firstSlug = false;
-            $buf .= $escapedPaths[$s] . ": {\n" . implode(",\n", $entries) . "\n    }";
-            fwrite($out, $buf);
         }
 
         fwrite($out, "\n}");
@@ -234,21 +231,16 @@ final class Parser
      * Parse a byte range using bucket accumulation for cache-friendly counting.
      */
     private function crunch(
-        string $path,
-        int $from,
-        int $until,
-        array $slugIndex,
-        array $dateChars,
-        int $numSlugs,
-        int $numDates,
-    ): array {
+        $path, $from, $until,
+        $slugIndex, $dateChars, $numSlugs, $numDates,
+    ) {
         $buckets = array_fill(0, $numSlugs, '');
         $fh = fopen($path, 'rb');
         stream_set_read_buffer($fh, 0);
         fseek($fh, $from);
 
         $remaining = $until - $from;
-        $bufSize = 8_388_608;
+        $bufSize = 4_194_304;
 
         while ($remaining > 0) {
             $raw = fread($fh, $remaining > $bufSize ? $bufSize : $remaining);
