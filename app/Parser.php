@@ -45,7 +45,7 @@ final class Parser
         gc_disable();
 
         $fileSize = filesize($inputPath);
-        $workers = 12;
+        $workers = 13;
 
         // ─── Build date lookup (arithmetic, no mktime/date overhead) ───
 
