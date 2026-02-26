@@ -6,7 +6,6 @@ namespace App;
 
 use App\Commands\Visit;
 
-use function array_chunk;
 use function array_count_values;
 use function array_fill;
 use function chr;
@@ -14,6 +13,7 @@ use function count;
 use function fclose;
 use function fgets;
 use function file_get_contents;
+use function file_put_contents;
 use function filesize;
 use function fopen;
 use function fread;
@@ -45,7 +45,7 @@ final class Parser
         gc_disable();
 
         $fileSize = filesize($inputPath);
-        $workers = 13;
+        $workers = 12;
 
         // ─── Build date lookup (arithmetic, no mktime/date overhead) ───
 
@@ -150,11 +150,7 @@ final class Parser
                     $inputPath, $bounds[$w], $bounds[$w + 1],
                     $slugIndex, $dateChars, $numSlugs, $numDates,
                 );
-                $wfh = fopen($tmpFile, 'wb');
-                foreach (array_chunk($result, 8192) as $batch) {
-                    fwrite($wfh, pack('V*', ...$batch));
-                }
-                fclose($wfh);
+                file_put_contents($tmpFile, pack('V*', ...$result));
                 exit(0);
             }
 
