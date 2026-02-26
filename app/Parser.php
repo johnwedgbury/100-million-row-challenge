@@ -4,6 +4,41 @@ namespace App;
 
 use App\Commands\Visit;
 
+use function array_fill;
+use function count;
+use function date;
+use function fclose;
+use function fgets;
+use function file_get_contents;
+use function file_put_contents;
+use function filesize;
+use function fopen;
+use function fread;
+use function fseek;
+use function ftell;
+use function fwrite;
+use function gc_disable;
+use function getenv;
+use function getmypid;
+use function intdiv;
+use function is_dir;
+use function min;
+use function mktime;
+use function pack;
+use function pcntl_fork;
+use function pcntl_waitpid;
+use function str_replace;
+use function stream_set_read_buffer;
+use function strlen;
+use function strpos;
+use function strrpos;
+use function substr;
+use function sys_get_temp_dir;
+use function unlink;
+use function unpack;
+
+use const SEEK_CUR;
+
 final class Parser
 {
     public function parse(string $inputPath, string $outputPath): void
@@ -185,7 +220,7 @@ final class Parser
             $escaped = str_replace('/', '\\/', $slugLabels[$s]);
             $json .= "\n    \"\\/blog\\/" . $escaped . "\": {\n" . $dateBuf . "\n    }";
 
-            if (strlen($json) > 65536) {
+            if (strlen($json) > 262144) {
                 fwrite($out, $json);
                 $json = '';
             }
