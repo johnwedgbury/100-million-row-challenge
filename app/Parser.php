@@ -274,9 +274,17 @@ final class Parser
 
             // Parse rows: find comma separator, extract slug + date
             $p = $prefix;
-            $fence = $end - 104;
+            $fence = $end - 512;
 
             while ($p < $fence) {
+                $sep = strpos($raw, ',', $p);
+                $counts[$slugIndex[substr($raw, $p, $sep - $p)] + $dateLookup[substr($raw, $sep + 4, 7)]]++;
+                $p = $sep + $stride;
+
+                $sep = strpos($raw, ',', $p);
+                $counts[$slugIndex[substr($raw, $p, $sep - $p)] + $dateLookup[substr($raw, $sep + 4, 7)]]++;
+                $p = $sep + $stride;
+
                 $sep = strpos($raw, ',', $p);
                 $counts[$slugIndex[substr($raw, $p, $sep - $p)] + $dateLookup[substr($raw, $sep + 4, 7)]]++;
                 $p = $sep + $stride;
