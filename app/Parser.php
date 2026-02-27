@@ -9,9 +9,12 @@ use App\Commands\Visit;
 use function array_chunk;
 use function array_count_values;
 use function array_fill;
+use function array_search;
+use function array_values;
 use function chr;
 use function count;
 use function fclose;
+use function feof;
 use function fgets;
 use function filesize;
 use function fopen;
@@ -23,9 +26,6 @@ use function gc_disable;
 use function pack;
 use function pcntl_fork;
 use function pcntl_waitpid;
-use function array_search;
-use function array_values;
-use function feof;
 use function str_replace;
 use function stream_select;
 use function stream_set_blocking;
@@ -94,15 +94,15 @@ final class Parser
         $numSlugs = 0;
 
         $sampleEnd = strrpos($sample, "\n");
-        $sp = 0;
+        $sp = 25;
 
         while ($sp < $sampleEnd) {
-            $nl = strpos($sample, "\n", $sp + 52);
-            if ($nl === false) {
+            $sep = strpos($sample, ',', $sp);
+            if ($sep === false) {
                 break;
             }
 
-            $slug = substr($sample, $sp + 25, $nl - $sp - 51);
+            $slug = substr($sample, $sp, $sep - $sp);
 
             if (!isset($slugIndex[$slug])) {
                 $slugIndex[$slug] = $numSlugs;
@@ -110,7 +110,7 @@ final class Parser
                 $numSlugs++;
             }
 
-            $sp = $nl + 1;
+            $sp = $sep + 52;
         }
 
         unset($sample);
@@ -195,7 +195,7 @@ final class Parser
 
             if ($ready === 0) {
                 if (++$stallCount > 6) {
-                    break; // 30s with no progress — fail fast
+                    break;
                 }
                 continue;
             }
@@ -280,7 +280,7 @@ final class Parser
     }
 
     /**
-     * Parse a byte range using bucket accumulation for cache-friendly counting.
+     * Parse a byte range using comma-based parsing for cache-friendly counting.
      */
     private function crunch(
         $path, $from, $until,
@@ -313,42 +313,42 @@ final class Parser
                 $remaining += $tail;
             }
 
-            $p = 0;
+            $p = 25;
             $fence = $end - 720;
 
             while ($p < $fence) {
-                $nl = strpos($raw, "\n", $p + 52);
-                $buckets[$slugIndex[substr($raw, $p + 25, $nl - $p - 51)]] .= $dateChars[substr($raw, $nl - 23, 8)];
-                $p = $nl + 1;
+                $sep = strpos($raw, ',', $p);
+                $buckets[$slugIndex[substr($raw, $p, $sep - $p)]] .= $dateChars[substr($raw, $sep + 3, 8)];
+                $p = $sep + 52;
 
-                $nl = strpos($raw, "\n", $p + 52);
-                $buckets[$slugIndex[substr($raw, $p + 25, $nl - $p - 51)]] .= $dateChars[substr($raw, $nl - 23, 8)];
-                $p = $nl + 1;
+                $sep = strpos($raw, ',', $p);
+                $buckets[$slugIndex[substr($raw, $p, $sep - $p)]] .= $dateChars[substr($raw, $sep + 3, 8)];
+                $p = $sep + 52;
 
-                $nl = strpos($raw, "\n", $p + 52);
-                $buckets[$slugIndex[substr($raw, $p + 25, $nl - $p - 51)]] .= $dateChars[substr($raw, $nl - 23, 8)];
-                $p = $nl + 1;
+                $sep = strpos($raw, ',', $p);
+                $buckets[$slugIndex[substr($raw, $p, $sep - $p)]] .= $dateChars[substr($raw, $sep + 3, 8)];
+                $p = $sep + 52;
 
-                $nl = strpos($raw, "\n", $p + 52);
-                $buckets[$slugIndex[substr($raw, $p + 25, $nl - $p - 51)]] .= $dateChars[substr($raw, $nl - 23, 8)];
-                $p = $nl + 1;
+                $sep = strpos($raw, ',', $p);
+                $buckets[$slugIndex[substr($raw, $p, $sep - $p)]] .= $dateChars[substr($raw, $sep + 3, 8)];
+                $p = $sep + 52;
 
-                $nl = strpos($raw, "\n", $p + 52);
-                $buckets[$slugIndex[substr($raw, $p + 25, $nl - $p - 51)]] .= $dateChars[substr($raw, $nl - 23, 8)];
-                $p = $nl + 1;
+                $sep = strpos($raw, ',', $p);
+                $buckets[$slugIndex[substr($raw, $p, $sep - $p)]] .= $dateChars[substr($raw, $sep + 3, 8)];
+                $p = $sep + 52;
 
-                $nl = strpos($raw, "\n", $p + 52);
-                $buckets[$slugIndex[substr($raw, $p + 25, $nl - $p - 51)]] .= $dateChars[substr($raw, $nl - 23, 8)];
-                $p = $nl + 1;
+                $sep = strpos($raw, ',', $p);
+                $buckets[$slugIndex[substr($raw, $p, $sep - $p)]] .= $dateChars[substr($raw, $sep + 3, 8)];
+                $p = $sep + 52;
             }
 
             while ($p < $end) {
-                $nl = strpos($raw, "\n", $p + 52);
-                if ($nl === false) {
+                $sep = strpos($raw, ',', $p);
+                if ($sep === false || $sep >= $end) {
                     break;
                 }
-                $buckets[$slugIndex[substr($raw, $p + 25, $nl - $p - 51)]] .= $dateChars[substr($raw, $nl - 23, 8)];
-                $p = $nl + 1;
+                $buckets[$slugIndex[substr($raw, $p, $sep - $p)]] .= $dateChars[substr($raw, $sep + 3, 8)];
+                $p = $sep + 52;
             }
         }
 
