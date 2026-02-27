@@ -145,7 +145,7 @@ final class Parser
         $pipes = [];
         $childPids = [];
 
-        for ($w = 0; $w < $numChunks - 1; $w++) {
+        for ($w = 0; $w < $numChunks; $w++) {
             $pair = stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
             $pid = pcntl_fork();
 
@@ -170,11 +170,8 @@ final class Parser
             $childPids[] = $pid;
         }
 
-        // Parent crunches last chunk (children get a head start)
-        $tally = $this->crunch(
-            $inputPath, $bounds[$numChunks - 1], $bounds[$numChunks],
-            $slugIndex, $dateChars, $numSlugs, $numDates,
-        );
+        // Parent only merges — all chunks handled by children
+        $tally = array_fill(0, $numSlugs * $numDates, 0);
 
         // ─── Merge child results via stream_select (concurrent drain) ───
 
