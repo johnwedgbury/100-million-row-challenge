@@ -50,7 +50,7 @@ final class Parser
         gc_disable();
 
         $fileSize = filesize($inputPath);
-        $workers = 10;
+        $workers = 12;
 
         // ─── Build date lookup (arithmetic, no mktime/date overhead) ───
 
@@ -292,7 +292,7 @@ final class Parser
         fseek($fh, $from);
 
         $remaining = $until - $from;
-        $bufSize = 163_840;
+        $bufSize = 131_072;
 
         while ($remaining > 0) {
             $raw = fread($fh, $remaining > $bufSize ? $bufSize : $remaining);
